@@ -1,0 +1,98 @@
+{
+    "debug": true,
+
+    "winflexbison": {
+        "build": false,
+        "debug": false,
+        "dirname": "bison",
+        "git": {
+            "url": "https://github.com/lexxmark/winflexbison.git",
+            "tag": "v2.5.25"
+        }
+    },
+
+    "openssl": {
+        "build": false,
+        "test": false,
+        "dirname": "openssl",
+        "git": {
+            "url": "https://github.com/openssl/openssl.git",
+            "tag": "openssl-3.0.8"
+        }
+    },
+
+    "zlib": {
+        "build": false,
+        "dirname": "zlib",
+        "git": {
+            "url": "https://github.com/madler/zlib.git",
+            "tag": "v1.2.13"
+        }
+    },
+
+    "lz4": {
+        "build": false,
+        "dirname": "lz4",
+        "git": {
+            "url": "https://github.com/lz4/lz4.git",
+            "tag": "v1.9.4"
+        }
+    },
+
+    "zstd": {
+        "build": false,
+        "dirname": "zstd",
+        "git": {
+            "url": "https://github.com/facebook/zstd.git",
+            "tag": "v1.5.4"
+        }
+    },
+
+    "icu": {
+        "build": false,
+        "dirname": "icu",
+        "git": {
+            "url": "https://github.com/unicode-org/icu.git",
+            "tag": "release-72-1"
+        }
+    },
+
+    "libxml2": {
+        "build": false,
+        "test": false,
+        "dirname": "libxml",
+        "git": {
+            "url": "https://github.com/GNOME/libxml2.git",
+            "tag": "v2.10.3"
+        }
+    },
+
+    "libxslt": {
+        "build": false,
+        "test": false,
+        "dirname": "libxslt",
+        "git": {
+            "url": "https://github.com/GNOME/libxslt.git",
+            "tag": "v1.1.37"
+        }
+    },
+
+    "utfcpp": {
+        "build": false,
+        "test": true,
+        "dirname": "utf8cpp",
+        "git": {
+            "url": "https://github.com/nemtrif/utfcpp.git",
+            "tag": "v3.2.3"
+        }
+    },
+
+    "antlr4": {
+        "build": false,
+        "dirname": "antlr4_cpp_runtime",
+        "git": {
+            "url": "https://github.com/antlr/antlr4.git",
+            "tag": "4.9.3"
+        }
+    }
+}
