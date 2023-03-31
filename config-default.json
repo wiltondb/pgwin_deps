@@ -60,7 +60,7 @@
     "libxml2": {
         "build": false,
         "test": false,
-        "dirname": "libxml",
+        "dirname": "xml",
         "git": {
             "url": "https://github.com/GNOME/libxml2.git",
             "tag": "v2.10.3"
@@ -70,10 +70,20 @@
     "libxslt": {
         "build": false,
         "test": false,
-        "dirname": "libxslt",
+        "dirname": "xslt",
         "git": {
             "url": "https://github.com/GNOME/libxslt.git",
             "tag": "v1.1.37"
+        }
+    },
+
+    "uuid_win": {
+        "build": false,
+        "test": true,
+        "dirname": "uuid",
+        "git": {
+            "url": "https://github.com/wiltondb/uuid_win.git",
+            "tag": "master"
         }
     },
 

@@ -54,23 +54,34 @@ sub ensure_dir_empty {
   make_path($dir) or die("$!");
 }
 
+sub debug_enabled {
+  my $config = shift;
+  my $depname = shift;
+  my $cf = $config->{$depname};
+  if (exists $cf->{debug}) {
+    return $cf->{debug};
+  }
+  return $config->{debug};
+}
+
 sub build_bison {
 	my $config = shift;
   my $depname = "winflexbison";
+  my $debug = debug_enabled($config, $depname);
   my $cf = $config->{$depname};
-  if (!${cf}->{"build"}) {
+  if (!${cf}->{build}) {
     return;
   }
   print("Building dependency: [$depname]\n");
   # checkout
   my $src_dir = catfile($root_dir, "src", $depname);
-  checkout_tag($src_dir, $cf->{"git"}{"url"}, $cf->{"git"}{"tag"});
+  checkout_tag($src_dir, $cf->{git}{url}, $cf->{git}{tag});
   # configure
   my $build_dir = catfile($root_dir, "build", $depname);
   ensure_dir_empty($build_dir);
   chdir($build_dir);
   my $cmake_build_type = "Release";
-  if ($cf->{"debug"}) {
+  if ($debug) {
     $cmake_build_type = "Debug";
   }
   my $src_dir_rel = abs2rel($src_dir, $build_dir);
@@ -85,7 +96,7 @@ sub build_bison {
   0 == system($build_cmd) or die("$!");
   chdir($root_dir);
   # install
-  my $dist_dir = catfile($root_dir, "dist", $cf->{"dirname"});
+  my $dist_dir = catfile($root_dir, "dist", $cf->{dirname});
   ensure_dir_empty($dist_dir);
   my $bin_dir = catfile($src_dir, "bin", $cmake_build_type);
   dircopy(catfile($bin_dir, "data"), catfile($dist_dir, "data")) or die("$!");
@@ -99,17 +110,18 @@ sub build_bison {
 sub build_openssl {
 	my $config = shift;
   my $depname = "openssl";
+  my $debug = debug_enabled($config, $depname);
   my $cf = $config->{$depname};
-  if (!${cf}->{"build"}) {
+  if (!${cf}->{build}) {
     return;
   }
   print("Building dependency: [$depname]\n");
   # checkout
   my $src_dir = catfile($root_dir, "src", $depname);
-  checkout_tag($src_dir, $cf->{"git"}{"url"}, $cf->{"git"}{"tag"});
+  checkout_tag($src_dir, $cf->{git}{url}, $cf->{git}{tag});
   # configure
   chdir($src_dir);
-  my $dist_dir = catfile($root_dir, "dist", $cf->{"dirname"});
+  my $dist_dir = catfile($root_dir, "dist", $cf->{dirname});
   ensure_dir_empty($dist_dir);
   my $dist_dir_forward = $dist_dir =~ s/\\/\//gr;
   my $conf_cmd = "perl Configure VC-WIN64A";
@@ -117,7 +129,7 @@ sub build_openssl {
   my $ossl_dir_forward = $ossl_dir =~ s/\\/\//gr;
   $conf_cmd .= " --prefix=$dist_dir_forward";
   $conf_cmd .= " --openssldir=$ossl_dir_forward";
-  if ($config->{"debug"}) {
+  if ($debug) {
     $conf_cmd .= " --debug";
   }
   print("$conf_cmd\n");
@@ -125,7 +137,7 @@ sub build_openssl {
   0 == system("perl configdata.pm --dump") or die("$!");
   # make
   0 == system("nmake") or die("$!");
-  if ($cf->{"test"}) {
+  if ($cf->{test}) {
     # check
     0 == system("nmake test") or die("$!");
   }
@@ -137,22 +149,23 @@ sub build_openssl {
 sub build_zlib {
 	my $config = shift;
   my $depname = "zlib";
+  my $debug = debug_enabled($config, $depname);
   my $cf = $config->{$depname};
-  if (!${cf}->{"build"}) {
+  if (!${cf}->{build}) {
     return;
   }
   print("Building dependency: [zlib]\n");
   # checkout
   my $src_dir = catfile($root_dir, "src", $depname);
-  checkout_tag($src_dir, $cf->{"git"}{"url"}, $cf->{"git"}{"tag"});
+  checkout_tag($src_dir, $cf->{git}{url}, $cf->{git}{tag});
   # configure
   my $build_dir = catfile($root_dir, "build", $depname);
   ensure_dir_empty($build_dir);
   chdir($build_dir);
-  my $dist_dir = catfile($root_dir, "dist", $cf->{"dirname"});
+  my $dist_dir = catfile($root_dir, "dist", $cf->{dirname});
   ensure_dir_empty($dist_dir);
   my $cmake_build_type = "Release";
-  if ($config->{"debug"}) {
+  if ($debug) {
     $cmake_build_type = "Debug";
   }
   my $src_dir_rel = abs2rel($src_dir, $build_dir);
@@ -172,6 +185,12 @@ sub build_zlib {
   $install_cmd .= " --target install";
   print("$install_cmd\n");
   0 == system($install_cmd) or die("$!");
+  my $dist_lib = catfile($dist_dir, "lib");
+  if ($debug) {
+    fcopy(catfile($dist_lib, "zlibd.lib"), catfile($dist_lib, "zdll.lib")) or die("$!");
+  } else {
+    fcopy(catfile($dist_lib, "zlib.lib"), catfile($dist_lib, "zdll.lib")) or die("$!");
+  }
   chdir($root_dir);
   print("Dependency: [$depname] installed to: [$dist_dir]\n");
 }
@@ -179,22 +198,23 @@ sub build_zlib {
 sub build_lz4 {
 	my $config = shift;
   my $depname = "lz4";
+  my $debug = debug_enabled($config, $depname);
   my $cf = $config->{$depname};
-  if (!${cf}->{"build"}) {
+  if (!${cf}->{build}) {
     return;
   }
   print("Building dependency: [$depname]\n");
   # checkout
   my $src_dir = catfile($root_dir, "src", $depname);
-  checkout_tag($src_dir, $cf->{"git"}{"url"}, $cf->{"git"}{"tag"});
+  checkout_tag($src_dir, $cf->{git}{url}, $cf->{git}{tag});
   # configure
   my $build_dir = catfile($root_dir, "build", $depname);
   ensure_dir_empty($build_dir);
   chdir($build_dir);
-  my $dist_dir = catfile($root_dir, "dist", $cf->{"dirname"});
+  my $dist_dir = catfile($root_dir, "dist", $cf->{dirname});
   ensure_dir_empty($dist_dir);
   my $cmake_build_type = "Release";
-  if ($config->{"debug"}) {
+  if ($debug) {
     $cmake_build_type = "Debug";
   }
   my $cmake_lists_dir = catfile($src_dir, "build", "cmake");
@@ -215,6 +235,8 @@ sub build_lz4 {
   $install_cmd .= " --target install";
   print("$install_cmd\n");
   0 == system($install_cmd) or die("$!");
+  my $dist_lib = catfile($dist_dir, "lib");
+  fcopy(catfile($dist_lib, "lz4.lib"), catfile($dist_lib, "liblz4.lib")) or die("$!");
   chdir($root_dir);
   print("Dependency: [$depname] installed to: [$dist_dir]\n");
 }
@@ -222,22 +244,23 @@ sub build_lz4 {
 sub build_zstd {
 	my $config = shift;
   my $depname = "zstd";
+  my $debug = debug_enabled($config, $depname);
   my $cf = $config->{$depname};
-  if (!${cf}->{"build"}) {
+  if (!${cf}->{build}) {
     return;
   }
   print("Building dependency: [$depname]\n");
   # checkout
   my $src_dir = catfile($root_dir, "src", $depname);
-  checkout_tag($src_dir, $cf->{"git"}{"url"}, $cf->{"git"}{"tag"});
+  checkout_tag($src_dir, $cf->{git}{url}, $cf->{git}{tag});
   # configure
   my $build_dir = catfile($root_dir, "build", $depname);
   ensure_dir_empty($build_dir);
   chdir($build_dir);
-  my $dist_dir = catfile($root_dir, "dist", $cf->{"dirname"});
+  my $dist_dir = catfile($root_dir, "dist", $cf->{dirname});
   ensure_dir_empty($dist_dir);
   my $cmake_build_type = "Release";
-  if ($config->{"debug"}) {
+  if ($debug) {
     $cmake_build_type = "Debug";
   }
   my $cmake_lists_dir = catfile($src_dir, "build", "cmake");
@@ -258,6 +281,8 @@ sub build_zstd {
   $install_cmd .= " --target install";
   print("$install_cmd\n");
   0 == system($install_cmd) or die("$!");
+  my $dist_lib = catfile($dist_dir, "lib");
+  fcopy(catfile($dist_lib, "zstd.lib"), catfile($dist_lib, "libzstd.lib")) or die("$!");
   chdir($root_dir);
   print("Dependency: [$depname] installed to: [$dist_dir]\n");
 }
@@ -265,17 +290,18 @@ sub build_zstd {
 sub build_icu {
 	my $config = shift;
   my $depname = "icu";
+  my $debug = debug_enabled($config, $depname);
   my $cf = $config->{$depname};
-  if (!${cf}->{"build"}) {
+  if (!${cf}->{build}) {
     return;
   }
   print("Building dependency: [$depname]\n");
   # checkout
   my $src_dir = catfile($root_dir, "src", $depname);
-  checkout_tag($src_dir, $cf->{"git"}{"url"}, $cf->{"git"}{"tag"});
+  checkout_tag($src_dir, $cf->{git}{url}, $cf->{git}{tag});
   # make
   my $build_type = "Release";
-  if ($config->{"debug"}) {
+  if ($debug) {
     $build_type = "Debug";
   }
   chdir($src_dir);
@@ -288,35 +314,41 @@ sub build_icu {
   0 == system($build_cmd) or die("$!");
   # install
   chdir($root_dir);
-  my $dist_dir = catfile($root_dir, "dist", $cf->{"dirname"});
+  my $dist_dir = catfile($root_dir, "dist", $cf->{dirname});
   ensure_dir_empty($dist_dir);
   dircopy(catfile($src_dir, "icu4c", "bin64"), catfile($dist_dir, "bin64")) or die("$!");
   dircopy(catfile($src_dir, "icu4c", "include"), catfile($dist_dir, "include")) or die("$!");
   dircopy(catfile($src_dir, "icu4c", "lib64"), catfile($dist_dir, "lib64")) or die("$!");
   fcopy(catfile($src_dir, "icu4c", "LICENSE"), catfile($dist_dir, "LICENSE")) or die("$!");
+  if ($debug) {
+    my $dist_lib64 = catfile($dist_dir, "lib64");
+    fcopy(catfile($dist_lib64, "icuind.lib"), catfile($dist_lib64, "icuin.lib")) or die("$!");
+    fcopy(catfile($dist_lib64, "icuucd.lib"), catfile($dist_lib64, "icuuc.lib")) or die("$!");
+  }
   print("Dependency: [$depname] installed to: [$dist_dir]\n");
 }
 
 sub build_libxml {
 	my $config = shift;
   my $depname = "libxml2";
+  my $debug = debug_enabled($config, $depname);
   my $cf = $config->{$depname};
-  if (!${cf}->{"build"}) {
+  if (!${cf}->{build}) {
     return;
   }
   print("Building dependency: [$depname]\n");
   # checkout
   my $src_dir = catfile($root_dir, "src", $depname);
-  checkout_tag($src_dir, $cf->{"git"}{"url"}, $cf->{"git"}{"tag"});
+  checkout_tag($src_dir, $cf->{git}{url}, $cf->{git}{tag});
   chdir($src_dir);
   # configure
   my $build_dir = catfile($root_dir, "build", $depname);
   ensure_dir_empty($build_dir);
   chdir($build_dir);
-  my $dist_dir = catfile($root_dir, "dist", $cf->{"dirname"});
+  my $dist_dir = catfile($root_dir, "dist", $cf->{dirname});
   ensure_dir_empty($dist_dir);
   my $cmake_build_type = "Release";
-  if ($config->{"debug"}) {
+  if ($debug) {
     $cmake_build_type = "Debug";
   }
   my $icu_dist_dir = catfile($root_dir, "dist", "icu");
@@ -340,7 +372,7 @@ sub build_libxml {
   print("$build_cmd\n");
   0 == system($build_cmd) or die("$!");
   # check
-  if ($cf->{"test"}) {
+  if ($cf->{test}) {
     0 == system("ctest") or die("$!");
   }
   # install
@@ -349,6 +381,10 @@ sub build_libxml {
   $install_cmd .= " --target install";
   print("$install_cmd\n");
   0 == system($install_cmd) or die("$!");
+  if ($debug) {
+    my $dist_lib = catfile($dist_dir, "lib");
+    fcopy(catfile($dist_lib, "libxml2d.lib"), catfile($dist_lib, "libxml2.lib")) or die("$!");
+  }
   chdir($root_dir);
   print("Dependency: [$depname] installed to: [$dist_dir]\n");
 }
@@ -356,26 +392,27 @@ sub build_libxml {
 sub build_libxslt {
 	my $config = shift;
   my $depname = "libxslt";
+  my $debug = debug_enabled($config, $depname);
   my $cf = $config->{$depname};
-  if (!${cf}->{"build"}) {
+  if (!${cf}->{build}) {
     return;
   }
   print("Building dependency: [$depname]\n");
   # checkout
   my $src_dir = catfile($root_dir, "src", $depname);
-  checkout_tag($src_dir, $cf->{"git"}{"url"}, $cf->{"git"}{"tag"});
+  checkout_tag($src_dir, $cf->{git}{url}, $cf->{git}{tag});
   chdir($src_dir);
   # configure
   my $build_dir = catfile($root_dir, "build", $depname);
   ensure_dir_empty($build_dir);
   chdir($build_dir);
-  my $dist_dir = catfile($root_dir, "dist", $cf->{"dirname"});
+  my $dist_dir = catfile($root_dir, "dist", $cf->{dirname});
   ensure_dir_empty($dist_dir);
   my $cmake_build_type = "Release";
-  if ($config->{"debug"}) {
+  if ($debug) {
     $cmake_build_type = "Debug";
   }
-  my $libxml_dist_dir = catfile($root_dir, "dist", "libxml");
+  my $libxml_dist_dir = catfile($root_dir, "dist", "xml");
   my $cmake_cmd = "cmake $src_dir";
   #$cmake_cmd .= " -DCMAKE_BUILD_TYPE=$cmake_build_type";
   $cmake_cmd .= " -DCMAKE_INSTALL_PREFIX=$dist_dir";
@@ -389,7 +426,57 @@ sub build_libxslt {
   print("$build_cmd\n");
   0 == system($build_cmd) or die("$!");
   # check
-  if ($cf->{"test"}) {
+  if ($cf->{test}) {
+    0 == system("ctest") or die("$!");
+  }
+  # install
+  my $install_cmd = "cmake --build .";
+  $install_cmd .= " --config $cmake_build_type";
+  $install_cmd .= " --target install";
+  print("$install_cmd\n");
+  0 == system($install_cmd) or die("$!");
+  if ($debug) {
+    my $dist_lib = catfile($dist_dir, "lib");
+    fcopy(catfile($dist_lib, "libxsltd.lib"), catfile($dist_lib, "libxslt.lib")) or die("$!");
+  }
+  chdir($root_dir);
+  print("Dependency: [$depname] installed to: [$dist_dir]\n");
+}
+
+sub build_uuid {
+	my $config = shift;
+  my $depname = "uuid_win";
+  my $debug = debug_enabled($config, $depname);
+  my $cf = $config->{$depname};
+  if (!${cf}->{build}) {
+    return;
+  }
+  print("Building dependency: [$depname]\n");
+  # checkout
+  my $src_dir = catfile($root_dir, "src", $depname);
+  checkout_tag($src_dir, $cf->{git}{url}, $cf->{git}{tag});
+  # configure
+  my $build_dir = catfile($root_dir, "build", $depname);
+  ensure_dir_empty($build_dir);
+  chdir($build_dir);
+  my $dist_dir = catfile($root_dir, "dist", $cf->{dirname});
+  ensure_dir_empty($dist_dir);
+  my $cmake_build_type = "Release";
+  if ($debug) {
+    $cmake_build_type = "Debug";
+  }
+  my $cmake_cmd = "cmake $src_dir";
+  #$cmake_cmd .= " -DCMAKE_BUILD_TYPE=$cmake_build_type";
+  $cmake_cmd .= " -DCMAKE_INSTALL_PREFIX=$dist_dir";
+  print("$cmake_cmd\n");
+  0 == system($cmake_cmd) or die("$!");
+  # make
+  my $build_cmd = "cmake --build .";
+  $build_cmd .= " --config $cmake_build_type";
+  print("$build_cmd\n");
+  0 == system($build_cmd) or die("$!");
+  # check
+  if ($cf->{test}) {
     0 == system("ctest") or die("$!");
   }
   # install
@@ -405,24 +492,25 @@ sub build_libxslt {
 sub build_utf8cpp {
 	my $config = shift;
   my $depname = "utfcpp";
+  my $debug = debug_enabled($config, $depname);
   my $cf = $config->{$depname};
-  if (!${cf}->{"build"}) {
+  if (!${cf}->{build}) {
     return;
   }
   print("Building dependency: [$depname]\n");
   # checkout
   my $src_dir = catfile($root_dir, "src", $depname);
-  checkout_tag($src_dir, $cf->{"git"}{"url"}, $cf->{"git"}{"tag"});
+  checkout_tag($src_dir, $cf->{git}{url}, $cf->{git}{tag});
   chdir($src_dir);
   0 == system("git submodule update --init extern/ftest") or die("$!");
   # configure
   my $build_dir = catfile($root_dir, "build", $depname);
   ensure_dir_empty($build_dir);
   chdir($build_dir);
-  my $dist_dir = catfile($root_dir, "dist", $cf->{"dirname"});
+  my $dist_dir = catfile($root_dir, "dist", $cf->{dirname});
   ensure_dir_empty($dist_dir);
   my $cmake_build_type = "Release";
-  if ($config->{"debug"}) {
+  if ($debug) {
     $cmake_build_type = "Debug";
   }
   my $cmake_cmd = "cmake $src_dir";
@@ -436,7 +524,7 @@ sub build_utf8cpp {
   print("$build_cmd\n");
   0 == system($build_cmd) or die("$!");
   # check
-  if ($cf->{"test"}) {
+  if ($cf->{test}) {
     0 == system("ctest") or die("$!");
   }
   # install
@@ -452,14 +540,15 @@ sub build_utf8cpp {
 sub build_antlr {
 	my $config = shift;
   my $depname = "antlr4";
+  my $debug = debug_enabled($config, $depname);
   my $cf = $config->{$depname};
-  if (!${cf}->{"build"}) {
+  if (!${cf}->{build}) {
     return;
   }
   print("Building dependency: [$depname]\n");
   # checkout
   my $src_dir = catfile($root_dir, "src", $depname);
-  checkout_tag($src_dir, $cf->{"git"}{"url"}, $cf->{"git"}{"tag"});
+  checkout_tag($src_dir, $cf->{git}{url}, $cf->{git}{tag});
   # patch
   my $runtime_cmake_lists = catfile($src_dir, "runtime", "Cpp", "CMakeLists.txt");
   print("Enabling utf8cpp use in cmake file: [$runtime_cmake_lists]\n");
@@ -475,10 +564,10 @@ sub build_antlr {
   my $build_dir = catfile($root_dir, "build", $depname);
   ensure_dir_empty($build_dir);
   chdir($build_dir);
-  my $dist_dir = catfile($root_dir, "dist", $cf->{"dirname"});
+  my $dist_dir = catfile($root_dir, "dist", $cf->{dirname});
   ensure_dir_empty($dist_dir);
   my $cmake_build_type = "Release";
-  if ($config->{"debug"}) {
+  if ($debug) {
     $cmake_build_type = "Debug";
   }
   my $cmake_lists_dir = catfile($src_dir, "runtime", "Cpp");
@@ -516,6 +605,7 @@ build_zstd($config);
 build_icu($config);
 build_libxml($config);
 build_libxslt($config);
+build_uuid($config);
 
 build_utf8cpp($config);
 build_antlr($config);
