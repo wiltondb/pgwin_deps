@@ -2,7 +2,7 @@
     "debug": true,
 
     "winflexbison": {
-        "build": false,
+        "build": true,
         "debug": false,
         "dirname": "bison",
         "git": {
@@ -12,7 +12,7 @@
     },
 
     "openssl": {
-        "build": false,
+        "build": true,
         "test": false,
         "dirname": "openssl",
         "git": {
@@ -22,7 +22,7 @@
     },
 
     "zlib": {
-        "build": false,
+        "build": true,
         "dirname": "zlib",
         "git": {
             "url": "https://github.com/madler/zlib.git",
@@ -31,7 +31,7 @@
     },
 
     "lz4": {
-        "build": false,
+        "build": true,
         "dirname": "lz4",
         "git": {
             "url": "https://github.com/lz4/lz4.git",
@@ -40,7 +40,7 @@
     },
 
     "zstd": {
-        "build": false,
+        "build": true,
         "dirname": "zstd",
         "git": {
             "url": "https://github.com/facebook/zstd.git",
@@ -49,7 +49,7 @@
     },
 
     "icu": {
-        "build": false,
+        "build": true,
         "dirname": "icu",
         "git": {
             "url": "https://github.com/unicode-org/icu.git",
@@ -58,7 +58,7 @@
     },
 
     "libxml2": {
-        "build": false,
+        "build": true,
         "test": false,
         "dirname": "xml",
         "git": {
@@ -68,7 +68,7 @@
     },
 
     "libxslt": {
-        "build": false,
+        "build": true,
         "test": false,
         "dirname": "xslt",
         "git": {
@@ -78,7 +78,7 @@
     },
 
     "uuid_win": {
-        "build": false,
+        "build": true,
         "test": true,
         "dirname": "uuid",
         "git": {
@@ -88,7 +88,7 @@
     },
 
     "utfcpp": {
-        "build": false,
+        "build": true,
         "test": true,
         "dirname": "utf8cpp",
         "git": {
@@ -98,7 +98,7 @@
     },
 
     "antlr4": {
-        "build": false,
+        "build": true,
         "dirname": "antlr4_cpp_runtime",
         "git": {
             "url": "https://github.com/antlr/antlr4.git",
