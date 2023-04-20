@@ -640,7 +640,7 @@ sub build_openssl {
 }
 
 sub build_all {
-  $config = shift;
+  my $config = shift;
   build_zlib($config);
   build_lz4($config);
   build_zstd($config);
