@@ -1,25 +1,5 @@
 {
-    "debug": true,
-
-    "winflexbison": {
-        "build": true,
-        "debug": false,
-        "dirname": "bison",
-        "git": {
-            "url": "https://github.com/lexxmark/winflexbison.git",
-            "tag": "v2.5.25"
-        }
-    },
-
-    "openssl": {
-        "build": true,
-        "test": false,
-        "dirname": "openssl",
-        "git": {
-            "url": "https://github.com/openssl/openssl.git",
-            "tag": "openssl-3.0.8"
-        }
-    },
+    "debug": false,
 
     "zlib": {
         "build": true,
@@ -44,7 +24,7 @@
         "dirname": "zstd",
         "git": {
             "url": "https://github.com/facebook/zstd.git",
-            "tag": "v1.5.4"
+            "tag": "v1.5.5"
         }
     },
 
@@ -83,7 +63,17 @@
         "dirname": "uuid",
         "git": {
             "url": "https://github.com/wiltondb/uuid_win.git",
-            "tag": "master"
+            "tag": "1.0.0"
+        }
+    },
+
+    "int128_win": {
+        "build": true,
+        "test": true,
+        "dirname": "int128",
+        "git": {
+            "url": "https://github.com/wiltondb/int128_win.git",
+            "tag": "1.0.0"
         }
     },
 
@@ -103,6 +93,16 @@
         "git": {
             "url": "https://github.com/antlr/antlr4.git",
             "tag": "4.9.3"
+        }
+    },
+    
+    "openssl": {
+        "build": true,
+        "test": false,
+        "dirname": "openssl",
+        "git": {
+            "url": "https://github.com/openssl/openssl.git",
+            "tag": "openssl-3.0.8"
         }
     }
 }

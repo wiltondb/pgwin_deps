@@ -1,3 +1,16 @@
+# Copyright 2023 alex@staticlibs.net
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 use strict;
 use warnings;
@@ -64,90 +77,8 @@ sub debug_enabled {
   return $config->{debug};
 }
 
-sub build_bison {
-	my $config = shift;
-  my $depname = "winflexbison";
-  my $debug = debug_enabled($config, $depname);
-  my $cf = $config->{$depname};
-  if (!${cf}->{build}) {
-    return;
-  }
-  print("Building dependency: [$depname]\n");
-  # checkout
-  my $src_dir = catfile($root_dir, "src", $depname);
-  checkout_tag($src_dir, $cf->{git}{url}, $cf->{git}{tag});
-  # configure
-  my $build_dir = catfile($root_dir, "build", $depname);
-  ensure_dir_empty($build_dir);
-  chdir($build_dir);
-  my $cmake_build_type = "Release";
-  if ($debug) {
-    $cmake_build_type = "Debug";
-  }
-  my $src_dir_rel = abs2rel($src_dir, $build_dir);
-  my $cmake_cmd = "cmake $src_dir_rel";
-  $cmake_cmd .= " -DCMAKE_BUILD_TYPE=$cmake_build_type";
-  print("$cmake_cmd\n");
-  0 == system($cmake_cmd) or die("$!");
-  # make
-  my $build_cmd = "cmake --build .";
-  $build_cmd .= " --config $cmake_build_type";
-  print("$build_cmd\n");
-  0 == system($build_cmd) or die("$!");
-  chdir($root_dir);
-  # install
-  my $dist_dir = catfile($root_dir, "dist", $cf->{dirname});
-  ensure_dir_empty($dist_dir);
-  my $bin_dir = catfile($src_dir, "bin", $cmake_build_type);
-  dircopy(catfile($bin_dir, "data"), catfile($dist_dir, "data")) or die("$!");
-  fcopy(catfile($bin_dir, "win_flex.exe"), catfile($dist_dir, "flex.exe")) or die("$!");
-  fcopy(catfile($bin_dir, "win_bison.exe"), catfile($dist_dir, "bison.exe")) or die("$!");
-  fcopy(catfile($src_dir, "COPYING"), catfile($dist_dir, "COPYING")) or die("$!");
-  fcopy(catfile($src_dir, "README.md"), catfile($dist_dir, "README.md")) or die("$!");
-  print("Dependency: [$depname] installed to: [$dist_dir]\n");
-}
-
-sub build_openssl {
-	my $config = shift;
-  my $depname = "openssl";
-  my $debug = debug_enabled($config, $depname);
-  my $cf = $config->{$depname};
-  if (!${cf}->{build}) {
-    return;
-  }
-  print("Building dependency: [$depname]\n");
-  # checkout
-  my $src_dir = catfile($root_dir, "src", $depname);
-  checkout_tag($src_dir, $cf->{git}{url}, $cf->{git}{tag});
-  # configure
-  chdir($src_dir);
-  my $dist_dir = catfile($root_dir, "dist", $cf->{dirname});
-  ensure_dir_empty($dist_dir);
-  my $dist_dir_forward = $dist_dir =~ s/\\/\//gr;
-  my $conf_cmd = "perl Configure VC-WIN64A";
-  my $ossl_dir = catfile($dist_dir, "ssl");
-  my $ossl_dir_forward = $ossl_dir =~ s/\\/\//gr;
-  $conf_cmd .= " --prefix=$dist_dir_forward";
-  $conf_cmd .= " --openssldir=$ossl_dir_forward";
-  if ($debug) {
-    $conf_cmd .= " --debug";
-  }
-  print("$conf_cmd\n");
-  0 == system($conf_cmd) or die("$!");
-  0 == system("perl configdata.pm --dump") or die("$!");
-  # make
-  0 == system("nmake") or die("$!");
-  if ($cf->{test}) {
-    # check
-    0 == system("nmake test") or die("$!");
-  }
-  # install
-  0 == system("nmake install") or die("$!");
-  print("Dependency: [$depname] installed to: [$dist_dir]\n");
-}
-
 sub build_zlib {
-	my $config = shift;
+  my $config = shift;
   my $depname = "zlib";
   my $debug = debug_enabled($config, $depname);
   my $cf = $config->{$depname};
@@ -164,7 +95,7 @@ sub build_zlib {
   chdir($build_dir);
   my $dist_dir = catfile($root_dir, "dist", $cf->{dirname});
   ensure_dir_empty($dist_dir);
-  my $cmake_build_type = "Release";
+  my $cmake_build_type = "RelWithDebInfo";
   if ($debug) {
     $cmake_build_type = "Debug";
   }
@@ -186,17 +117,23 @@ sub build_zlib {
   print("$install_cmd\n");
   0 == system($install_cmd) or die("$!");
   my $dist_lib = catfile($dist_dir, "lib");
+  my $dist_bin = catfile($dist_dir, "bin");
+  my $build_bin = catfile($build_dir, $cmake_build_type);
   if ($debug) {
     fcopy(catfile($dist_lib, "zlibd.lib"), catfile($dist_lib, "zdll.lib")) or die("$!");
+    fcopy(catfile($build_bin, "zlibd.pdb"), catfile($dist_bin, "zlibd.pdb")) or die("$!");
+    fcopy(catfile($build_bin, "zlibstaticd.pdb"), catfile($dist_lib, "zlibstaticd.pdb")) or die("$!");
   } else {
     fcopy(catfile($dist_lib, "zlib.lib"), catfile($dist_lib, "zdll.lib")) or die("$!");
+    fcopy(catfile($build_bin, "zlib.pdb"), catfile($dist_bin, "zlib.pdb")) or die("$!");
+    fcopy(catfile($build_bin, "zlibstatic.pdb"), catfile($dist_lib, "zlibstatic.pdb")) or die("$!");
   }
   chdir($root_dir);
   print("Dependency: [$depname] installed to: [$dist_dir]\n");
 }
 
 sub build_lz4 {
-	my $config = shift;
+  my $config = shift;
   my $depname = "lz4";
   my $debug = debug_enabled($config, $depname);
   my $cf = $config->{$depname};
@@ -213,7 +150,7 @@ sub build_lz4 {
   chdir($build_dir);
   my $dist_dir = catfile($root_dir, "dist", $cf->{dirname});
   ensure_dir_empty($dist_dir);
-  my $cmake_build_type = "Release";
+  my $cmake_build_type = "RelWithDebInfo";
   if ($debug) {
     $cmake_build_type = "Debug";
   }
@@ -222,6 +159,8 @@ sub build_lz4 {
   my $cmake_cmd = "cmake $cmake_lists_dir_rel";
   #$cmake_cmd .= " -DCMAKE_BUILD_TYPE=$cmake_build_type";
   $cmake_cmd .= " -DCMAKE_INSTALL_PREFIX=$dist_dir";
+  $cmake_cmd .= " -DLZ4_BUILD_CLI=OFF";
+  $cmake_cmd .= " -DLZ4_BUILD_LEGACY_LZ4C=OFF";
   print("$cmake_cmd\n");
   0 == system($cmake_cmd) or die("$!");
   # make
@@ -236,13 +175,16 @@ sub build_lz4 {
   print("$install_cmd\n");
   0 == system($install_cmd) or die("$!");
   my $dist_lib = catfile($dist_dir, "lib");
+  my $dist_bin = catfile($dist_dir, "bin");
   fcopy(catfile($dist_lib, "lz4.lib"), catfile($dist_lib, "liblz4.lib")) or die("$!");
+  my $build_bin = catfile($build_dir, $cmake_build_type);
+  fcopy(catfile($build_bin, "lz4.pdb"), catfile($dist_bin, "lz4.pdb")) or die("$!");
   chdir($root_dir);
   print("Dependency: [$depname] installed to: [$dist_dir]\n");
 }
 
 sub build_zstd {
-	my $config = shift;
+  my $config = shift;
   my $depname = "zstd";
   my $debug = debug_enabled($config, $depname);
   my $cf = $config->{$depname};
@@ -259,7 +201,7 @@ sub build_zstd {
   chdir($build_dir);
   my $dist_dir = catfile($root_dir, "dist", $cf->{dirname});
   ensure_dir_empty($dist_dir);
-  my $cmake_build_type = "Release";
+  my $cmake_build_type = "RelWithDebInfo";
   if ($debug) {
     $cmake_build_type = "Debug";
   }
@@ -268,6 +210,8 @@ sub build_zstd {
   my $cmake_cmd = "cmake $cmake_lists_dir_rel";
   $cmake_cmd .= " -DCMAKE_BUILD_TYPE=$cmake_build_type";
   $cmake_cmd .= " -DCMAKE_INSTALL_PREFIX=$dist_dir";
+  $cmake_cmd .= " -DZSTD_BUILD_PROGRAMS=OFF";
+  $cmake_cmd .= " -DZSTD_MULTITHREAD_SUPPORT=OFF";
   print("$cmake_cmd\n");
   0 == system($cmake_cmd) or die("$!");
   # make
@@ -282,13 +226,17 @@ sub build_zstd {
   print("$install_cmd\n");
   0 == system($install_cmd) or die("$!");
   my $dist_lib = catfile($dist_dir, "lib");
+  my $dist_bin = catfile($dist_dir, "bin");
   fcopy(catfile($dist_lib, "zstd.lib"), catfile($dist_lib, "libzstd.lib")) or die("$!");
+  my $build_bin = catfile($build_dir, "lib", $cmake_build_type);
+  fcopy(catfile($build_bin, "zstd.pdb"), catfile($dist_bin, "zstd.pdb")) or die("$!");
+  fcopy(catfile($build_bin, "zstd_static.pdb"), catfile($dist_lib, "zstd_static.pdb")) or die("$!");
   chdir($root_dir);
   print("Dependency: [$depname] installed to: [$dist_dir]\n");
 }
 
 sub build_icu {
-	my $config = shift;
+  my $config = shift;
   my $depname = "icu";
   my $debug = debug_enabled($config, $depname);
   my $cf = $config->{$depname};
@@ -329,7 +277,7 @@ sub build_icu {
 }
 
 sub build_libxml {
-	my $config = shift;
+  my $config = shift;
   my $depname = "libxml2";
   my $debug = debug_enabled($config, $depname);
   my $cf = $config->{$depname};
@@ -347,7 +295,7 @@ sub build_libxml {
   chdir($build_dir);
   my $dist_dir = catfile($root_dir, "dist", $cf->{dirname});
   ensure_dir_empty($dist_dir);
-  my $cmake_build_type = "Release";
+  my $cmake_build_type = "RelWithDebInfo";
   if ($debug) {
     $cmake_build_type = "Debug";
   }
@@ -390,7 +338,7 @@ sub build_libxml {
 }
 
 sub build_libxslt {
-	my $config = shift;
+  my $config = shift;
   my $depname = "libxslt";
   my $debug = debug_enabled($config, $depname);
   my $cf = $config->{$depname};
@@ -408,7 +356,7 @@ sub build_libxslt {
   chdir($build_dir);
   my $dist_dir = catfile($root_dir, "dist", $cf->{dirname});
   ensure_dir_empty($dist_dir);
-  my $cmake_build_type = "Release";
+  my $cmake_build_type = "RelWithDebInfo";
   if ($debug) {
     $cmake_build_type = "Debug";
   }
@@ -444,7 +392,7 @@ sub build_libxslt {
 }
 
 sub build_uuid {
-	my $config = shift;
+  my $config = shift;
   my $depname = "uuid_win";
   my $debug = debug_enabled($config, $depname);
   my $cf = $config->{$depname};
@@ -461,7 +409,7 @@ sub build_uuid {
   chdir($build_dir);
   my $dist_dir = catfile($root_dir, "dist", $cf->{dirname});
   ensure_dir_empty($dist_dir);
-  my $cmake_build_type = "Release";
+  my $cmake_build_type = "RelWithDebInfo";
   if ($debug) {
     $cmake_build_type = "Debug";
   }
@@ -485,12 +433,57 @@ sub build_uuid {
   $install_cmd .= " --target install";
   print("$install_cmd\n");
   0 == system($install_cmd) or die("$!");
+  my $dist_lib = catfile($dist_dir, "lib");
+  fcopy(catfile($dist_lib, "uuid_win.lib"), catfile($dist_lib, "uuid.lib")) or die("$!");
   chdir($root_dir);
   print("Dependency: [$depname] installed to: [$dist_dir]\n");
 }
 
+sub build_int128 {
+  my $config = shift;
+  my $depname = "int128_win";
+  my $debug = debug_enabled($config, $depname);
+  my $cf = $config->{$depname};
+  if (!${cf}->{build}) {
+    return;
+  }
+  print("Building dependency: [$depname]\n");
+  # checkout
+  my $src_dir = catfile($root_dir, "src", $depname);
+  checkout_tag($src_dir, $cf->{git}{url}, $cf->{git}{tag});
+  # configure
+  my $build_dir = catfile($root_dir, "build", $depname);
+  ensure_dir_empty($build_dir);
+  chdir($build_dir);
+  my $cmake_build_type = "RelWithDebInfo";
+  if ($debug) {
+    $cmake_build_type = "Debug";
+  }
+  my $cmake_cmd = "cmake $src_dir";
+  print("$cmake_cmd\n");
+  0 == system($cmake_cmd) or die("$!");
+  # make
+  my $build_cmd = "cmake --build .";
+  $build_cmd .= " --config $cmake_build_type";
+  print("$build_cmd\n");
+  0 == system($build_cmd) or die("$!");
+  # check
+  if ($cf->{test}) {
+    0 == system("ctest") or die("$!");
+  }
+  chdir($root_dir);
+  # install
+  my $dist_dir = catfile($root_dir, "dist", $cf->{dirname});
+  ensure_dir_empty($dist_dir);
+  fcopy(catfile($src_dir, "int128_win.h"), catfile($dist_dir, "int128_win.h")) or die("$!");
+  fcopy(catfile($src_dir, "uint128_win.h"), catfile($dist_dir, "uint128_win.h")) or die("$!");
+  fcopy(catfile($src_dir, "LICENSE.txt"), catfile($dist_dir, "LICENSE.txt")) or die("$!");
+  fcopy(catfile($src_dir, "README.md"), catfile($dist_dir, "README.md")) or die("$!");
+  print("Dependency: [$depname] installed to: [$dist_dir]\n");
+}
+
 sub build_utf8cpp {
-	my $config = shift;
+  my $config = shift;
   my $depname = "utfcpp";
   my $debug = debug_enabled($config, $depname);
   my $cf = $config->{$depname};
@@ -509,7 +502,7 @@ sub build_utf8cpp {
   chdir($build_dir);
   my $dist_dir = catfile($root_dir, "dist", $cf->{dirname});
   ensure_dir_empty($dist_dir);
-  my $cmake_build_type = "Release";
+  my $cmake_build_type = "RelWithDebInfo";
   if ($debug) {
     $cmake_build_type = "Debug";
   }
@@ -538,7 +531,7 @@ sub build_utf8cpp {
 }
 
 sub build_antlr {
-	my $config = shift;
+  my $config = shift;
   my $depname = "antlr4";
   my $debug = debug_enabled($config, $depname);
   my $cf = $config->{$depname};
@@ -560,13 +553,18 @@ sub build_antlr {
   my $locale_line_from = '^#include "Vocabulary.h"$';
   my $locale_line_to = "#include \"Vocabulary.h\"\n\n#include <locale>";
   edit_file(sub { s/$locale_line_from/$locale_line_to/m }, $vocabulary_cpp);
+  my $antlr4_common_h = catfile($src_dir, "runtime", "Cpp", "runtime", "src", "antlr4-common.h");
+  print("Fixing 'std::u32string' call, file: [$antlr4_common_h]\n");
+  my $msc_line_from = '^\s*#if _MSC_VER >= 1900 && _MSC_VER < 2000$';
+  my $msc_line_to = "  #if 0 // _MSC_VER >= 1900 && _MSC_VER < 2000";
+  edit_file(sub { s/$msc_line_from/$msc_line_to/m }, $antlr4_common_h);
   # configure
   my $build_dir = catfile($root_dir, "build", $depname);
   ensure_dir_empty($build_dir);
   chdir($build_dir);
   my $dist_dir = catfile($root_dir, "dist", $cf->{dirname});
   ensure_dir_empty($dist_dir);
-  my $cmake_build_type = "Release";
+  my $cmake_build_type = "RelWithDebInfo";
   if ($debug) {
     $cmake_build_type = "Debug";
   }
@@ -592,20 +590,81 @@ sub build_antlr {
   $install_cmd .= " --target install";
   print("$install_cmd\n");
   0 == system($install_cmd) or die("$!");
+  my $build_bin = catfile($src_dir, "runtime", "Cpp", "dist", $cmake_build_type);
+  my $dist_lib = catfile($dist_dir, "lib");
+  fcopy(catfile($build_bin, "antlr4-runtime.pdb"), catfile($dist_lib, "antlr4-runtime.pdb")) or die("$!");
+  fcopy(catfile($build_bin, "antlr4-runtime-static.pdb"), catfile($dist_lib, "antlr4-runtime-static.pdb")) or die("$!");
   chdir($root_dir);
   print("Dependency: [$depname] installed to: [$dist_dir]\n");
 }
 
-my $config = read_config();
-build_bison($config);
-build_openssl($config);
-build_zlib($config);
-build_lz4($config);
-build_zstd($config);
-build_icu($config);
-build_libxml($config);
-build_libxslt($config);
-build_uuid($config);
+sub build_openssl {
+  my $config = shift;
+  my $depname = "openssl";
+  my $debug = debug_enabled($config, $depname);
+  my $cf = $config->{$depname};
+  if (!${cf}->{build}) {
+    return;
+  }
+  print("Building dependency: [$depname]\n");
+  # checkout
+  my $src_dir = catfile($root_dir, "src", $depname);
+  checkout_tag($src_dir, $cf->{git}{url}, $cf->{git}{tag});
+  # configure
+  chdir($src_dir);
+  my $dist_dir = catfile($root_dir, "dist", $cf->{dirname});
+  ensure_dir_empty($dist_dir);
+  my $dist_dir_forward = $dist_dir =~ s/\\/\//gr;
+  my $conf_cmd = "perl Configure VC-WIN64A";
+  my $ossl_dir = catfile($dist_dir, "ssl");
+  my $ossl_dir_forward = $ossl_dir =~ s/\\/\//gr;
+  $conf_cmd .= " --prefix=$dist_dir_forward";
+  $conf_cmd .= " --openssldir=$ossl_dir_forward";
+  if ($debug) {
+    $conf_cmd .= " --debug";
+  }
+  print("$conf_cmd\n");
+  0 == system($conf_cmd) or die("$!");
+  0 == system("perl configdata.pm --dump") or die("$!");
+  # make
+  0 == system("nmake") or die("$!");
+  if ($cf->{test}) {
+    # check
+    0 == system("nmake test") or die("$!");
+  }
+  # install
+  0 == system("nmake install") or die("$!");
+  my $html_dir = catfile($dist_dir, "html");
+  remove_tree($html_dir) or die("$!");
+  print("Dependency: [$depname] installed to: [$dist_dir]\n");
+}
 
-build_utf8cpp($config);
-build_antlr($config);
+sub build_all {
+  $config = shift;
+  build_zlib($config);
+  build_lz4($config);
+  build_zstd($config);
+  build_icu($config);
+  build_libxml($config);
+  build_libxslt($config);
+  build_uuid($config);
+  build_int128($config);
+  build_utf8cpp($config);
+  build_antlr($config);
+  build_openssl($config);
+}
+
+my $config = read_config();
+my $dist_dir = catfile($root_dir, "dist");
+my $out_dir = catfile($root_dir, "out");
+ensure_dir_empty($out_dir);
+
+# release
+$config->{debug} = false;
+build_all($config);
+rename($dist_dir, catfile($out_dir, "release")) or die("$!");
+
+# debug
+$config->{debug} = true;
+build_all($config);
+rename($dist_dir, catfile($out_dir, "debug")) or die("$!");
