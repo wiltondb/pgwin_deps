@@ -9,7 +9,7 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
     - name: Run build
-      run: perl build.pl
+      run: cmd /c build.bat
     - name: Upload artiacts
       uses: actions/upload-artifact@v3
       with:
