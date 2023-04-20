@@ -660,11 +660,11 @@ my $out_dir = catfile($root_dir, "out");
 ensure_dir_empty($out_dir);
 
 # release
-$config->{debug} = false;
+$config->{debug} = 0;
 build_all($config);
 rename($dist_dir, catfile($out_dir, "release")) or die("$!");
 
 # debug
-$config->{debug} = true;
+$config->{debug} = 1;
 build_all($config);
 rename($dist_dir, catfile($out_dir, "debug")) or die("$!");
