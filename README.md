@@ -7,7 +7,7 @@ GitHub Actions build setup for dependency libraries [used by PostgreSQL on Windo
  - [OpenSSL](https://www.openssl.org/)
  - [libxml2](https://gitlab.gnome.org/GNOME/libxml2/-/wikis/home) and [libxslt](http://www.xmlsoft.org/libxslt/index.html)
  - compression libraries: [zlib](https://www.zlib.net/), [LZ4](https://github.com/lz4/lz4) and [Zstandard](https://github.com/facebook/zstd)
- - libraries required by [Babelfish extensions](https://babelfishpg.org/): [ANTLR C++ runtime](https://www.antlr.org/), [uuid_win](https://github.com/wiltondb/uuid_win) and [int128_win](https://github.com/wiltondb/int128_win).
+ - libraries required by [Babelfish](https://babelfishpg.org/) extensions: [ANTLR C++ runtime](https://www.antlr.org/), [uuid_win](https://github.com/wiltondb/uuid_win) and [int128_win](https://github.com/wiltondb/int128_win).
 
 All dependencies are built from upstream source repos using [MSVC](https://en.wikipedia.org/wiki/Microsoft_Visual_C%2B%2B) toolchain, see exact versions used in a [config file](https://github.com/wiltondb/pgwin_deps/blob/master/config-default.json).
 
