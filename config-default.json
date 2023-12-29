@@ -43,7 +43,7 @@
         "dirname": "xml",
         "git": {
             "url": "https://github.com/GNOME/libxml2.git",
-            "tag": "v2.11.5"
+            "tag": "v2.11.6"
         }
     },
 
@@ -53,7 +53,7 @@
         "dirname": "xslt",
         "git": {
             "url": "https://github.com/GNOME/libxslt.git",
-            "tag": "v1.1.38"
+            "tag": "v1.1.39"
         }
     },
 
@@ -83,7 +83,7 @@
         "dirname": "utf8cpp",
         "git": {
             "url": "https://github.com/nemtrif/utfcpp.git",
-            "tag": "v3.2.5"
+            "tag": "v4.0.3"
         }
     },
 
