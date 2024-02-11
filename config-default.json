@@ -6,7 +6,7 @@
         "dirname": "zlib",
         "git": {
             "url": "https://github.com/madler/zlib.git",
-            "tag": "v1.3"
+            "tag": "v1.3.1"
         }
     },
 
@@ -43,7 +43,7 @@
         "dirname": "xml",
         "git": {
             "url": "https://github.com/GNOME/libxml2.git",
-            "tag": "v2.11.6"
+            "tag": "v2.11.7"
         }
     },
 
@@ -102,7 +102,7 @@
         "dirname": "openssl",
         "git": {
             "url": "https://github.com/openssl/openssl.git",
-            "tag": "openssl-3.0.12"
+            "tag": "openssl-3.0.13"
         }
     }
 }
