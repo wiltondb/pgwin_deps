@@ -696,6 +696,56 @@ sub build_iconv {
   print("Dependency: [$depname] installed to: [$dist_dir]\n");
 }
 
+sub build_freetds {
+  my $config = shift;
+  my $depname = "freetds";
+  my $debug = debug_enabled($config, $depname);
+  my $cf = $config->{$depname};
+  if (!${cf}->{build}) {
+    return;
+  }
+  print("Building dependency: [$depname]\n");
+  # checkout
+  my $src_dir = catfile($root_dir, "src", $depname);
+  checkout_tag($src_dir, $cf->{git}{url}, $cf->{git}{tag});
+  # deps
+  my $openssl_dir = catfile($root_dir, "dist", "openssl");
+  my $iconv_dir = catfile($root_dir, "dist", "iconv");
+  dircopy($iconv_dir, catfile($src_dir, "iconv")) or die("$!");
+  # configure
+  my $dist_dir = catfile($root_dir, "dist", $cf->{dirname});
+  ensure_dir_empty($dist_dir);
+  my $build_dir = catfile($root_dir, "build", $depname);
+  ensure_dir_empty($build_dir);
+  chdir($build_dir);
+  my $cmake_build_type = "RelWithDebInfo";
+  if ($debug) {
+    $cmake_build_type = "Debug";
+  }
+  my $cmake_cmd = "cmake $src_dir";
+  $cmake_cmd .= " -G \"NMake Makefiles\"";
+  $cmake_cmd .= " -DCMAKE_BUILD_TYPE=$cmake_build_type";
+  $cmake_cmd .= " -DENABLE_MSDBLIB=on";
+  $cmake_cmd .= " -DCMAKE_INSTALL_PREFIX:PATH=$dist_dir";
+  $cmake_cmd .= " -DOPENSSL_ROOT_DIR=$openssl_dir";
+  print("$cmake_cmd\n");
+  0 == system($cmake_cmd) or die("$!");
+  # make
+  my $build_cmd = "nmake";
+  print("$build_cmd\n");
+  0 == system($build_cmd) or die("$!");
+  # install
+  my $install_cmd = "nmake install";
+  print("$install_cmd\n");
+  0 == system($install_cmd) or die("$!");
+  chdir($root_dir);
+  my $bin_dir = catfile($dist_dir, "bin");
+  fcopy(catfile($build_dir, "src", "ctlib", "ct.pdb"), catfile($bin_dir, "ct.pdb")) or die("$!");
+  fcopy(catfile($build_dir, "src", "dblib", "sybdb.pdb"), catfile($bin_dir, "sybdb.pdb")) or die("$!");
+  fcopy(catfile($build_dir, "src", "odbc", "tdsodbc.pdb"), catfile($bin_dir, "tdsodbc.pdb")) or die("$!");
+  print("Dependency: [$depname] installed to: [$dist_dir]\n");
+}
+
 sub build_all {
   my $config = shift;
   build_zlib($config);
@@ -710,6 +760,7 @@ sub build_all {
   build_antlr($config);
   build_openssl($config);
   build_iconv($config);
+  build_freetds($config);
 }
 
 my $config = read_config();

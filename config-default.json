@@ -114,5 +114,14 @@
             "url": "https://github.com/win-iconv/win-iconv.git",
             "tag": "9f98392dfecadffd62572e73e9aba878e03496c4"
         }
+    },
+
+    "freetds": {
+        "build": true,
+        "dirname": "freetds",
+        "git": {
+            "url": "https://github.com/FreeTDS/freetds.git",
+            "tag": "v1.4.10"
+        }
     }
 }
