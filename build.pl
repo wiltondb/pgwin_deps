@@ -639,6 +639,63 @@ sub build_openssl {
   print("Dependency: [$depname] installed to: [$dist_dir]\n");
 }
 
+sub build_iconv {
+  my $config = shift;
+  my $depname = "iconv";
+  my $debug = debug_enabled($config, $depname);
+  my $cf = $config->{$depname};
+  if (!${cf}->{build}) {
+    return;
+  }
+  print("Building dependency: [$depname]\n");
+  # checkout
+  my $src_dir = catfile($root_dir, "src", $depname);
+  checkout_tag($src_dir, $cf->{git}{url}, $cf->{git}{tag});
+  # configure
+  my $build_dir = catfile($root_dir, "build", $depname);
+  ensure_dir_empty($build_dir);
+  chdir($build_dir);
+  my $cmake_build_type = "RelWithDebInfo";
+  if ($debug) {
+    $cmake_build_type = "Debug";
+  }
+  my $cmake_cmd = "cmake $src_dir";
+  $cmake_cmd .= " -DBUILD_STATIC=off";
+  $cmake_cmd .= " -DBUILD_SHARED=on";
+  $cmake_cmd .= " -DBUILD_EXECUTABLE=off";
+  $cmake_cmd .= " -DBUILD_TEST=on";
+  print("$cmake_cmd\n");
+  0 == system($cmake_cmd) or die("$!");
+  # make
+  my $build_cmd = "cmake --build .";
+  $build_cmd .= " --config $cmake_build_type";
+  print("$build_cmd\n");
+  0 == system($build_cmd) or die("$!");
+  # check
+  if ($cf->{test}) {
+    0 == system("ctest") or die("$!");
+  }
+  chdir($root_dir);
+  # install
+  my $target_dir = catfile($build_dir, $cmake_build_type);
+  my $dist_dir = catfile($root_dir, "dist", $cf->{dirname});
+  ensure_dir_empty($dist_dir);
+  my $include_dir = catfile($dist_dir, "include");
+  ensure_dir_empty($include_dir);
+  my $bin_dir = catfile($dist_dir, "bin");
+  ensure_dir_empty($bin_dir);
+  my $lib_dir = catfile($dist_dir, "lib");
+  ensure_dir_empty($lib_dir);
+  fcopy(catfile($src_dir, "iconv.h"), catfile($include_dir, "iconv.h")) or die("$!");
+  fcopy(catfile($target_dir, "iconv.dll"), catfile($bin_dir, "iconv.dll")) or die("$!");
+  fcopy(catfile($target_dir, "iconv.pdb"), catfile($bin_dir, "iconv.pdb")) or die("$!");
+  fcopy(catfile($target_dir, "iconv.lib"), catfile($lib_dir, "iconv.lib")) or die("$!");
+  fcopy(catfile($target_dir, "iconv.exp"), catfile($lib_dir, "iconv.exp")) or die("$!");
+  fcopy(catfile($src_dir, "readme.txt"), catfile($dist_dir, "readme.txt")) or die("$!");
+  fcopy(catfile($src_dir, "ChangeLog"), catfile($dist_dir, "ChangeLog")) or die("$!");
+  print("Dependency: [$depname] installed to: [$dist_dir]\n");
+}
+
 sub build_all {
   my $config = shift;
   build_zlib($config);
@@ -652,6 +709,7 @@ sub build_all {
   build_utf8cpp($config);
   build_antlr($config);
   build_openssl($config);
+  build_iconv($config);
 }
 
 my $config = read_config();
