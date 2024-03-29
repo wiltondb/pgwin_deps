@@ -12,7 +12,7 @@ GitHub Actions build setup for dependency libraries [used by PostgreSQL on Windo
    - [UTF8-CPP](https://github.com/nemtrif/utfcpp)
    - [uuid_win](https://github.com/wiltondb/uuid_win)
    - [int128_win](https://github.com/wiltondb/int128_win)
-  - libraries required by [tds_fdw](https://github.com/tds-fdw/tds_fdw) extension for [Linked Servers](https://github.com/wiltondb/wiltondb/wiki/Linked-Servers-and-OPENQUERY) support:
+ - libraries required by [tds_fdw](https://github.com/tds-fdw/tds_fdw) extension for [Linked Servers](https://github.com/wiltondb/wiltondb/wiki/Linked-Servers-and-OPENQUERY) support:
    - [FreeTDS](https://www.freetds.org/)
    - [win-iconv](https://github.com/win-iconv/win-iconv.git)
 
