@@ -746,6 +746,44 @@ sub build_freetds {
   print("Dependency: [$depname] installed to: [$dist_dir]\n");
 }
 
+sub build_mimalloc {
+  my $config = shift;
+  my $depname = "mimalloc";
+  my $debug = debug_enabled($config, $depname);
+  my $cf = $config->{$depname};
+  if (!${cf}->{build}) {
+    return;
+  }
+  print("Building dependency: [$depname]\n");
+  # checkout
+  my $src_dir = catfile($root_dir, "src", $depname);
+  checkout_tag($src_dir, $cf->{git}{url}, $cf->{git}{tag});
+  # make
+  my $build_type = "Release";
+  if ($debug) {
+    $build_type = "Debug";
+  }
+  chdir($src_dir);
+  my $sln = catfile($src_dir, "ide", "vs2022", "mimalloc.sln");
+  my $build_cmd = "msbuild $sln";
+  $build_cmd .= " /p:Configuration=$build_type";
+  $build_cmd .= " /p:Platform=x64";
+  print("$build_cmd\n");
+  0 == system($build_cmd) or die("$!");
+  # install
+  chdir($root_dir);
+  my $dist_dir = catfile($root_dir, "dist", $cf->{dirname});
+  ensure_dir_empty($dist_dir);
+  dircopy(catfile($src_dir, "include"), catfile($dist_dir, "include")) or die("$!");
+  my $bin_dir = catfile($dist_dir, "bin");
+  ensure_dir_empty($bin_dir);
+  my $target_dir = catfile($src_dir, "out", "msvc-x64", $build_type);
+  fcopy(catfile($target_dir, "mimalloc-static.lib"), catfile($bin_dir, "mimalloc-static.lib")) or die("$!");
+  fcopy(catfile($target_dir, "mimalloc-static.pdb"), catfile($bin_dir, "mimalloc-static.pdb")) or die("$!");
+  fcopy(catfile($src_dir, "LICENSE"), catfile($dist_dir, "LICENSE")) or die("$!");
+  print("Dependency: [$depname] installed to: [$dist_dir]\n");
+}
+
 sub build_all {
   my $config = shift;
   build_zlib($config);
@@ -761,6 +799,7 @@ sub build_all {
   build_openssl($config);
   build_iconv($config);
   build_freetds($config);
+  build_mimalloc($config);
 }
 
 my $config = read_config();

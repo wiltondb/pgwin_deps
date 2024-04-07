@@ -9,6 +9,7 @@ GitHub Actions build setup for dependency libraries [used by PostgreSQL on Windo
  - compression libraries: [zlib](https://www.zlib.net/), [LZ4](https://github.com/lz4/lz4) and [Zstandard](https://github.com/facebook/zstd)
  - libraries required by [Babelfish](https://babelfishpg.org/) extensions for core functionality: 
    - [ANTLR C++ runtime](https://www.antlr.org/)
+   - [mimalloc](https://github.com/microsoft/mimalloc)
    - [UTF8-CPP](https://github.com/nemtrif/utfcpp)
    - [uuid_win](https://github.com/wiltondb/uuid_win)
    - [int128_win](https://github.com/wiltondb/int128_win)

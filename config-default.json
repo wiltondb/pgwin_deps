@@ -123,5 +123,14 @@
             "url": "https://github.com/FreeTDS/freetds.git",
             "tag": "v1.4.10"
         }
+    },
+
+    "mimalloc": {
+        "build": true,
+        "dirname": "mimalloc",
+        "git": {
+            "url": "https://github.com/microsoft/mimalloc.git",
+            "tag": "v2.1.2"
+        }
     }
 }
