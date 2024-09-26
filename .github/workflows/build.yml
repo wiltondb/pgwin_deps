@@ -7,12 +7,12 @@ jobs:
     runs-on: windows-latest
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
     - name: Run build
       run: cmd /c build.bat
     - name: Upload artiacts
       uses: actions/upload-artifact@v4
       with:
-        name: pgwin_deps-${github.ref}
+        name: pgwin_deps-${{ github.ref_name }}
         path: out
         retention-days: 1

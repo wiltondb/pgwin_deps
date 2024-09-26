@@ -847,7 +847,7 @@ sub bundle_icu_versioned {
 my $config = read_config();
 
 if ($config->{build_bundle}) {
-  my $tag = $ENV{GITHUB_REF};
+  my $tag = $ENV{GITHUB_REF_NAME};
   my $bundle_dir = catfile($root_dir, "out", "pgwin_deps-$tag");
   ensure_dir_empty($bundle_dir);
 
