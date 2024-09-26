@@ -1,4 +1,5 @@
 {
+    "build_bundle": true,
     "debug": false,
 
     "zlib": {
@@ -11,54 +12,83 @@
     },
 
     "lz4": {
-        "build": true,
+        "build": false,
         "dirname": "lz4",
         "git": {
             "url": "https://github.com/lz4/lz4.git",
-            "tag": "v1.9.4"
+            "tag": "v1.10.0"
         }
     },
 
     "zstd": {
-        "build": true,
+        "build": false,
         "dirname": "zstd",
         "git": {
             "url": "https://github.com/facebook/zstd.git",
-            "tag": "v1.5.5"
+            "tag": "v1.5.6"
         }
     },
 
-    "icu": {
-        "build": true,
-        "dirname": "icu",
+    "icu73": {
+        "build": false,
+        "dirname": "icu73",
         "git": {
             "url": "https://github.com/unicode-org/icu.git",
             "tag": "release-73-2"
         }
     },
 
-    "libxml2": {
-        "build": true,
-        "test": false,
-        "dirname": "xml",
+    "icu75": {
+        "build": false,
+        "dirname": "icu75",
         "git": {
-            "url": "https://github.com/GNOME/libxml2.git",
-            "tag": "v2.12.8"
+            "url": "https://github.com/unicode-org/icu.git",
+            "tag": "release-75-1"
         }
     },
 
-    "libxslt": {
-        "build": true,
+    "libxml2_icu73": {
+        "build": false,
         "test": false,
-        "dirname": "xslt",
+        "dirname": "xml_icu73",
+        "git": {
+            "url": "https://github.com/GNOME/libxml2.git",
+            "tag": "v2.13.4"
+        }
+    },
+
+    "libxml2_icu75": {
+        "build": false,
+        "test": false,
+        "dirname": "xml_icu75",
+        "git": {
+            "url": "https://github.com/GNOME/libxml2.git",
+            "tag": "v2.13.4"
+        }
+    },
+
+    "libxslt_icu73": {
+        "build": false,
+        "test": false,
+        "dirname": "xslt_icu73",
         "git": {
             "url": "https://github.com/GNOME/libxslt.git",
-            "tag": "v1.1.39"
+            "tag": "v1.1.42"
+        }
+    },
+
+    "libxslt_icu75": {
+        "build": false,
+        "test": false,
+        "dirname": "xslt_icu75",
+        "git": {
+            "url": "https://github.com/GNOME/libxslt.git",
+            "tag": "v1.1.42"
         }
     },
 
     "uuid_win": {
-        "build": true,
+        "build": false,
         "test": true,
         "dirname": "uuid",
         "git": {
@@ -68,7 +98,7 @@
     },
 
     "int128_win": {
-        "build": true,
+        "build": false,
         "test": true,
         "dirname": "int128",
         "git": {
@@ -78,7 +108,7 @@
     },
 
     "utfcpp": {
-        "build": true,
+        "build": false,
         "test": true,
         "dirname": "utf8cpp",
         "git": {
@@ -88,7 +118,7 @@
     },
 
     "antlr4": {
-        "build": true,
+        "build": false,
         "dirname": "antlr4_cpp_runtime",
         "git": {
             "url": "https://github.com/antlr/antlr4.git",
@@ -97,17 +127,17 @@
     },
     
     "openssl": {
-        "build": true,
+        "build": false,
         "test": false,
         "dirname": "openssl",
         "git": {
             "url": "https://github.com/openssl/openssl.git",
-            "tag": "openssl-3.0.14"
+            "tag": "openssl-3.0.15"
         }
     },
 
     "iconv": {
-        "build": true,
+        "build": false,
         "test": true,
         "dirname": "iconv",
         "git": {
@@ -117,7 +147,7 @@
     },
 
     "freetds": {
-        "build": true,
+        "build": false,
         "dirname": "freetds",
         "git": {
             "url": "https://github.com/FreeTDS/freetds.git",
@@ -126,7 +156,7 @@
     },
 
     "mimalloc": {
-        "build": true,
+        "build": false,
         "dirname": "mimalloc",
         "git": {
             "url": "https://github.com/microsoft/mimalloc.git",

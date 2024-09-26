@@ -22,6 +22,9 @@ use File::Slurp qw(edit_file read_file);
 use File::Spec::Functions qw(abs2rel catfile);
 use JSON qw(decode_json);
 
+my $icu_version_1 = "icu73";
+my $icu_version_2 = "icu75";
+
 my $root_dir = dirname(abs_path(__FILE__));
 
 sub read_config {
@@ -77,14 +80,24 @@ sub debug_enabled {
   return $config->{debug};
 }
 
+sub build_enabled {
+  my $config = shift;
+  my $depname = shift;
+  if ($config->{build_bundle}) {
+    return 1;
+  }
+  my $cf = $config->{$depname};
+  return $cf->{build};
+}
+
 sub build_zlib {
   my $config = shift;
   my $depname = "zlib";
-  my $debug = debug_enabled($config, $depname);
-  my $cf = $config->{$depname};
-  if (!${cf}->{build}) {
+  if (!build_enabled($config, $depname)) {
     return;
   }
+  my $debug = debug_enabled($config, $depname);
+  my $cf = $config->{$depname};
   print("Building dependency: [zlib]\n");
   # checkout
   my $src_dir = catfile($root_dir, "src", $depname);
@@ -135,11 +148,11 @@ sub build_zlib {
 sub build_lz4 {
   my $config = shift;
   my $depname = "lz4";
-  my $debug = debug_enabled($config, $depname);
-  my $cf = $config->{$depname};
-  if (!${cf}->{build}) {
+  if (!build_enabled($config, $depname)) {
     return;
   }
+  my $debug = debug_enabled($config, $depname);
+  my $cf = $config->{$depname};
   print("Building dependency: [$depname]\n");
   # checkout
   my $src_dir = catfile($root_dir, "src", $depname);
@@ -160,7 +173,6 @@ sub build_lz4 {
   #$cmake_cmd .= " -DCMAKE_BUILD_TYPE=$cmake_build_type";
   $cmake_cmd .= " -DCMAKE_INSTALL_PREFIX=$dist_dir";
   $cmake_cmd .= " -DLZ4_BUILD_CLI=OFF";
-  $cmake_cmd .= " -DLZ4_BUILD_LEGACY_LZ4C=OFF";
   print("$cmake_cmd\n");
   0 == system($cmake_cmd) or die("$!");
   # make
@@ -186,11 +198,11 @@ sub build_lz4 {
 sub build_zstd {
   my $config = shift;
   my $depname = "zstd";
-  my $debug = debug_enabled($config, $depname);
-  my $cf = $config->{$depname};
-  if (!${cf}->{build}) {
+  if (!build_enabled($config, $depname)) {
     return;
   }
+  my $debug = debug_enabled($config, $depname);
+  my $cf = $config->{$depname};
   print("Building dependency: [$depname]\n");
   # checkout
   my $src_dir = catfile($root_dir, "src", $depname);
@@ -207,11 +219,13 @@ sub build_zstd {
   }
   my $cmake_lists_dir = catfile($src_dir, "build", "cmake");
   my $cmake_lists_dir_rel = abs2rel($cmake_lists_dir, $build_dir);
+  my $srclib_dir = catfile($src_dir, "lib");
   my $cmake_cmd = "cmake $cmake_lists_dir_rel";
   $cmake_cmd .= " -DCMAKE_BUILD_TYPE=$cmake_build_type";
   $cmake_cmd .= " -DCMAKE_INSTALL_PREFIX=$dist_dir";
   $cmake_cmd .= " -DZSTD_BUILD_PROGRAMS=OFF";
   $cmake_cmd .= " -DZSTD_MULTITHREAD_SUPPORT=OFF";
+  $cmake_cmd .= " -DCMAKE_RC_FLAGS=-I$srclib_dir";
   print("$cmake_cmd\n");
   0 == system($cmake_cmd) or die("$!");
   # make
@@ -237,16 +251,24 @@ sub build_zstd {
 
 sub build_icu {
   my $config = shift;
-  my $depname = "icu";
-  my $debug = debug_enabled($config, $depname);
-  my $cf = $config->{$depname};
-  if (!${cf}->{build}) {
+  my $icu_version = shift;
+  my $depname = $icu_version;
+  if (!build_enabled($config, $depname)) {
     return;
   }
+  my $debug = debug_enabled($config, $depname);
+  my $cf = $config->{$depname};
   print("Building dependency: [$depname]\n");
   # checkout
-  my $src_dir = catfile($root_dir, "src", $depname);
+  my $src_dir = catfile($root_dir, "src", "icu");
   checkout_tag($src_dir, $cf->{git}{url}, $cf->{git}{tag});
+  if ($icu_version eq "icu75") {
+    # fix error C1083: Cannot open include file: 'stdalign.h'
+    my $ccapitstc_file = catfile($src_dir, "icu4c/source/test/cintltst/ccapitst.c");
+    my $ccapitstc_line_from = '^#include <stdalign.h>$';
+    my $ccapitstc_line_to = '#define alignof _Alignof';
+    edit_file(sub { s/$ccapitstc_line_from/$ccapitstc_line_to/m }, $ccapitstc_file);
+  }
   # make
   my $build_type = "Release";
   if ($debug) {
@@ -278,15 +300,16 @@ sub build_icu {
 
 sub build_libxml {
   my $config = shift;
-  my $depname = "libxml2";
-  my $debug = debug_enabled($config, $depname);
-  my $cf = $config->{$depname};
-  if (!${cf}->{build}) {
+  my $icu_version = shift;
+  my $depname = "libxml2_$icu_version";
+  if (!build_enabled($config, $depname)) {
     return;
   }
+  my $debug = debug_enabled($config, $depname);
+  my $cf = $config->{$depname};
   print("Building dependency: [$depname]\n");
   # checkout
-  my $src_dir = catfile($root_dir, "src", $depname);
+  my $src_dir = catfile($root_dir, "src", "libxml2");
   checkout_tag($src_dir, $cf->{git}{url}, $cf->{git}{tag});
   chdir($src_dir);
   # configure
@@ -299,7 +322,7 @@ sub build_libxml {
   if ($debug) {
     $cmake_build_type = "Debug";
   }
-  my $icu_dist_dir = catfile($root_dir, "dist", "icu");
+  my $icu_dist_dir = catfile($root_dir, "dist", "$icu_version");
   my $zlib_dist_dir = catfile($root_dir, "dist", "zlib");
   my $cmake_cmd = "cmake $src_dir";
   $cmake_cmd .= " -DCMAKE_BUILD_TYPE=$cmake_build_type";
@@ -339,15 +362,16 @@ sub build_libxml {
 
 sub build_libxslt {
   my $config = shift;
-  my $depname = "libxslt";
-  my $debug = debug_enabled($config, $depname);
-  my $cf = $config->{$depname};
-  if (!${cf}->{build}) {
+  my $icu_version = shift;
+  my $depname = "libxslt_$icu_version";
+  if (!build_enabled($config, $depname)) {
     return;
   }
+  my $debug = debug_enabled($config, $depname);
+  my $cf = $config->{$depname};
   print("Building dependency: [$depname]\n");
   # checkout
-  my $src_dir = catfile($root_dir, "src", $depname);
+  my $src_dir = catfile($root_dir, "src", "libxslt");
   checkout_tag($src_dir, $cf->{git}{url}, $cf->{git}{tag});
   chdir($src_dir);
   # configure
@@ -360,7 +384,7 @@ sub build_libxslt {
   if ($debug) {
     $cmake_build_type = "Debug";
   }
-  my $libxml_dist_dir = catfile($root_dir, "dist", "xml");
+  my $libxml_dist_dir = catfile($root_dir, "dist", "xml_$icu_version");
   my $cmake_cmd = "cmake $src_dir";
   #$cmake_cmd .= " -DCMAKE_BUILD_TYPE=$cmake_build_type";
   $cmake_cmd .= " -DCMAKE_INSTALL_PREFIX=$dist_dir";
@@ -394,11 +418,11 @@ sub build_libxslt {
 sub build_uuid {
   my $config = shift;
   my $depname = "uuid_win";
-  my $debug = debug_enabled($config, $depname);
-  my $cf = $config->{$depname};
-  if (!${cf}->{build}) {
+  if (!build_enabled($config, $depname)) {
     return;
   }
+  my $debug = debug_enabled($config, $depname);
+  my $cf = $config->{$depname};
   print("Building dependency: [$depname]\n");
   # checkout
   my $src_dir = catfile($root_dir, "src", $depname);
@@ -442,11 +466,11 @@ sub build_uuid {
 sub build_int128 {
   my $config = shift;
   my $depname = "int128_win";
-  my $debug = debug_enabled($config, $depname);
-  my $cf = $config->{$depname};
-  if (!${cf}->{build}) {
+  if (!build_enabled($config, $depname)) {
     return;
   }
+  my $debug = debug_enabled($config, $depname);
+  my $cf = $config->{$depname};
   print("Building dependency: [$depname]\n");
   # checkout
   my $src_dir = catfile($root_dir, "src", $depname);
@@ -485,11 +509,11 @@ sub build_int128 {
 sub build_utf8cpp {
   my $config = shift;
   my $depname = "utfcpp";
-  my $debug = debug_enabled($config, $depname);
-  my $cf = $config->{$depname};
-  if (!${cf}->{build}) {
+  if (!build_enabled($config, $depname)) {
     return;
   }
+  my $debug = debug_enabled($config, $depname);
+  my $cf = $config->{$depname};
   print("Building dependency: [$depname]\n");
   # checkout
   my $src_dir = catfile($root_dir, "src", $depname);
@@ -533,11 +557,11 @@ sub build_utf8cpp {
 sub build_antlr {
   my $config = shift;
   my $depname = "antlr4";
-  my $debug = debug_enabled($config, $depname);
-  my $cf = $config->{$depname};
-  if (!${cf}->{build}) {
+  if (!build_enabled($config, $depname)) {
     return;
   }
+  my $debug = debug_enabled($config, $depname);
+  my $cf = $config->{$depname};
   print("Building dependency: [$depname]\n");
   # checkout
   my $src_dir = catfile($root_dir, "src", $depname);
@@ -601,11 +625,11 @@ sub build_antlr {
 sub build_openssl {
   my $config = shift;
   my $depname = "openssl";
-  my $debug = debug_enabled($config, $depname);
-  my $cf = $config->{$depname};
-  if (!${cf}->{build}) {
+  if (!build_enabled($config, $depname)) {
     return;
   }
+  my $debug = debug_enabled($config, $depname);
+  my $cf = $config->{$depname};
   print("Building dependency: [$depname]\n");
   # checkout
   my $src_dir = catfile($root_dir, "src", $depname);
@@ -642,11 +666,11 @@ sub build_openssl {
 sub build_iconv {
   my $config = shift;
   my $depname = "iconv";
-  my $debug = debug_enabled($config, $depname);
-  my $cf = $config->{$depname};
-  if (!${cf}->{build}) {
+  if (!build_enabled($config, $depname)) {
     return;
   }
+  my $debug = debug_enabled($config, $depname);
+  my $cf = $config->{$depname};
   print("Building dependency: [$depname]\n");
   # checkout
   my $src_dir = catfile($root_dir, "src", $depname);
@@ -699,11 +723,11 @@ sub build_iconv {
 sub build_freetds {
   my $config = shift;
   my $depname = "freetds";
-  my $debug = debug_enabled($config, $depname);
-  my $cf = $config->{$depname};
-  if (!${cf}->{build}) {
+  if (!build_enabled($config, $depname)) {
     return;
   }
+  my $debug = debug_enabled($config, $depname);
+  my $cf = $config->{$depname};
   print("Building dependency: [$depname]\n");
   # checkout
   my $src_dir = catfile($root_dir, "src", $depname);
@@ -749,11 +773,11 @@ sub build_freetds {
 sub build_mimalloc {
   my $config = shift;
   my $depname = "mimalloc";
-  my $debug = debug_enabled($config, $depname);
-  my $cf = $config->{$depname};
-  if (!${cf}->{build}) {
+  if (!build_enabled($config, $depname)) {
     return;
   }
+  my $debug = debug_enabled($config, $depname);
+  my $cf = $config->{$depname};
   print("Building dependency: [$depname]\n");
   # checkout
   my $src_dir = catfile($root_dir, "src", $depname);
@@ -789,9 +813,12 @@ sub build_all {
   build_zlib($config);
   build_lz4($config);
   build_zstd($config);
-  build_icu($config);
-  build_libxml($config);
-  build_libxslt($config);
+  build_icu($config, $icu_version_1);
+  build_icu($config, $icu_version_2);
+  build_libxml($config, $icu_version_1);
+  build_libxml($config, $icu_version_2);
+  build_libxslt($config, $icu_version_1);
+  build_libxslt($config, $icu_version_2);
   build_uuid($config);
   build_int128($config);
   build_utf8cpp($config);
@@ -802,17 +829,40 @@ sub build_all {
   build_mimalloc($config);
 }
 
+sub bundle_icu_versioned {
+  my $bundle_dir = shift;
+  my $bundle_name = shift;
+  my $icu_version_target = shift;
+  my $icu_version_discard = shift;
+  my $target_dir = catfile($bundle_dir, "$bundle_name-$icu_version_target");
+  dircopy(catfile($root_dir, "dist"), $target_dir) or die("$!");
+  rename(catfile($target_dir, $icu_version_target), catfile($target_dir, "icu")) or die("$!");
+  remove_tree(catfile($target_dir, $icu_version_discard)) or die("$!");
+  rename(catfile($target_dir, "xml_$icu_version_target"), catfile($target_dir, "xml")) or die("$!");
+  remove_tree(catfile($target_dir, "xml_$icu_version_discard")) or die("$!");
+  rename(catfile($target_dir, "xslt_$icu_version_target"), catfile($target_dir, "xslt")) or die("$!");
+  remove_tree(catfile($target_dir, "xslt_$icu_version_discard")) or die("$!");
+}
+
 my $config = read_config();
-my $dist_dir = catfile($root_dir, "dist");
-my $out_dir = catfile($root_dir, "out");
-ensure_dir_empty($out_dir);
 
-# release
-$config->{debug} = 0;
-build_all($config);
-rename($dist_dir, catfile($out_dir, "release")) or die("$!");
+if ($config->{build_bundle}) {
+  my $tag = $ENV{GITHUB_REF};
+  my $bundle_dir = catfile($root_dir, "out", "pgwin_deps-$tag");
+  ensure_dir_empty($bundle_dir);
 
-# debug
-$config->{debug} = 1;
-build_all($config);
-rename($dist_dir, catfile($out_dir, "debug")) or die("$!");
+  # release
+  $config->{debug} = 0;
+  build_all($config);
+  bundle_icu_versioned($bundle_dir, "release", $icu_version_1, $icu_version_2);
+  bundle_icu_versioned($bundle_dir, "release", $icu_version_2, $icu_version_1);
+
+  # debug
+  $config->{debug} = 1;
+  build_all($config);
+  bundle_icu_versioned($bundle_dir, "debug", $icu_version_1, $icu_version_2);
+  bundle_icu_versioned($bundle_dir, "debug", $icu_version_2, $icu_version_1);
+
+} else {
+  build_all($config);
+}
